@@ -42,6 +42,8 @@ class LoadableExtensionTest(unittest.TestCase):
         ).fetchone()
         self.assertEqual(out, "Hi Ada, 2 items")
 
+    # Connection.load_extension(entrypoint=...) arrived in Python 3.12.
+    @unittest.skipIf(sys.version_info < (3, 12), "load_extension(entrypoint=) needs Python 3.12+")
     def test_generic_entry_point(self):
         conn = sqlite3.connect(":memory:")
         conn.enable_load_extension(True)
