@@ -16,8 +16,8 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use libsqlite3_sys as ffi;
 use minijinja::{Environment, Error, ErrorKind, Value};
-use rusqlite::{Connection, OptionalExtension, ffi};
 
 use crate::environment::base_environment;
 
@@ -36,17 +36,15 @@ unsafe impl Send for DbHandle {}
 unsafe impl Sync for DbHandle {}
 
 impl DbHandle {
-    fn source_of(self, name: &str) -> rusqlite::Result<Option<String>> {
-        // A non-owning wrapper, created per lookup: it must not outlive the
-        // call, and any statement prepared here is finalized before
-        // returning, so nothing can keep the connection from closing.
-        let conn = unsafe { Connection::from_handle(self.0) }?;
-        conn.query_row(
-            "SELECT source FROM jinja_templates WHERE name = ?1",
-            [name],
-            |row| row.get(0),
-        )
-        .optional()
+    fn source_of(self, name: &str) -> Result<Option<String>, String> {
+        // SAFETY: see the type's invariant.
+        unsafe {
+            crate::sqlite::query_text(
+                self.0,
+                c"SELECT source FROM jinja_templates WHERE name = ?1",
+                name,
+            )
+        }
     }
 }
 
@@ -100,8 +98,8 @@ impl StoredEngine {
     }
 }
 
-fn load_error(name: &str, err: rusqlite::Error) -> Error {
-    let hint = if err.to_string().contains("no such table") {
+fn load_error(name: &str, err: String) -> Error {
+    let hint = if err.contains("no such table") {
         format!(" (create it with: {TABLE_DDL})")
     } else {
         String::new()

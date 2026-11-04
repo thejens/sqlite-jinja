@@ -18,16 +18,21 @@ name = "sqlite_jinja"
 [features]
 default = ["loadable"]
 # Build a run-time loadable extension (`.load`, `load_extension()`).
-loadable = ["rusqlite/loadable_extension"]
+loadable = ["libsqlite3-sys/loadable_extension", "libsqlite3-sys/buildtime_bindgen"]
 # Link SQLite statically instead; used by the test suite and by Rust programs
 # that call `sqlite_jinja::register` directly.
-static = ["rusqlite/bundled"]
+static = ["dep:rusqlite", "rusqlite/bundled"]
 
 [dependencies]
 lru = "0.19.0"
 minijinja = { version = "3.0.5", features = ["json", "fuel", "loop_controls", "urlencode", "unicode", "preserve_order", "serde"] }
 minijinja-contrib = { version = "3.0.5", features = ["datetime", "pycompat"] }
-rusqlite = { version = "0.41.1", default-features = false, features = ["functions"] }
+# Talked to directly (see src/sqlite.rs). Must stay the version rusqlite
+# uses, so that `register` can hand rusqlite's handle to the same bindings.
+libsqlite3-sys = { version = "0.39.1", default-features = false }
+# Only for the `static` feature's `register(&rusqlite::Connection)` API and
+# the tests; the extension itself does not use it.
+rusqlite = { version = "0.41.1", default-features = false, features = ["functions"], optional = true }
 serde_json = "1.0.154"
 
 [profile.release]

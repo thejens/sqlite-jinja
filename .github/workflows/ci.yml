@@ -10,12 +10,21 @@ env:
 
 jobs:
   test:
-    name: ${{ matrix.os }}
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        include:
+          # The end-to-end tests load the extension into each platform's own
+          # SQLite, the way users do. Ubuntu 22.04 ships SQLite 3.37.2, the
+          # oldest version the extension supports (see sqlite-headers/).
+          - { name: "Ubuntu 22.04 (SQLite 3.37)", os: ubuntu-22.04, python: /usr/bin/python3 }
+          - { name: "Ubuntu 24.04 (SQLite 3.45)", os: ubuntu-24.04, python: /usr/bin/python3, lint: true }
+          # Homebrew's Python: the python.org and setup-python builds for
+          # macOS cannot load SQLite extensions.
+          - { name: "macOS (Homebrew SQLite)", os: macos-15, python: brew }
+          - { name: "Windows (python.org SQLite)", os: windows-2025, python: setup }
     steps:
       - uses: actions/checkout@v5
 
@@ -25,12 +34,8 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
       - name: Format
-        if: matrix.os == 'ubuntu-24.04'
+        if: matrix.lint
         run: cargo fmt --check
 
       - name: Clippy
@@ -44,5 +49,22 @@ jobs:
       - name: Build loadable extension
         run: cargo build --release
 
-      - name: End-to-end tests (loadable extension in Python's SQLite)
-        run: python -m unittest discover -s tests/python -v
+      - uses: actions/setup-python@v5
+        if: matrix.python == 'setup'
+        with:
+          python-version: "3.13"
+
+      - name: Select Python
+        shell: bash
+        run: |
+          case "${{ matrix.python }}" in
+            brew)  brew install python@3.13 >/dev/null; echo "PYTHON=$(brew --prefix python@3.13)/bin/python3.13" >> "$GITHUB_ENV" ;;
+            setup) echo "PYTHON=python" >> "$GITHUB_ENV" ;;
+            *)     echo "PYTHON=${{ matrix.python }}" >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: End-to-end tests (loadable extension in the platform's SQLite)
+        shell: bash
+        run: |
+          "$PYTHON" -c 'import sqlite3; print("SQLite", sqlite3.sqlite_version)'
+          "$PYTHON" -m unittest discover -s tests/python -v

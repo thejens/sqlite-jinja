@@ -49,9 +49,11 @@ SELECT jinja_render(
 
 ## Installation
 
+sqlite-jinja loads into **SQLite 3.37.2 or newer**: Ubuntu 22.04 and later, Debian 12, Homebrew, and Python on Windows. On an older SQLite, loading fails with a message naming both versions.
+
 **Prebuilt binaries:** download the archive for your platform from the [releases page](https://github.com/thejens/sqlite-jinja/releases). Builds are provided for Linux (x86_64, ARM64), macOS (Apple Silicon, Intel) and Windows (x86_64).
 
-**From source:** with a [Rust toolchain](https://rustup.rs):
+**From source:** with a [Rust toolchain](https://rustup.rs) and libclang (used to generate the SQLite bindings):
 
 ```sh
 git clone https://github.com/thejens/sqlite-jinja.git

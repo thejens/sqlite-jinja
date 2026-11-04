@@ -1,0 +1,8 @@
+# Point libsqlite3-sys at the vendored SQLite 3.37.2 headers (see
+# sqlite-headers/README.md). Only the `loadable` build reads them: it runs
+# bindgen against sqlite3ext.h and links no SQLite library. The LIB_DIR entry
+# is what makes libsqlite3-sys take the include directory from the
+# environment; nothing is linked from it.
+[env]
+SQLITE3_INCLUDE_DIR = { value = "sqlite-headers", relative = true }
+SQLITE3_LIB_DIR = { value = "sqlite-headers", relative = true }
