@@ -10,6 +10,8 @@ It is written in Rust and uses [MiniJinja](https://github.com/mitsuhiko/minijinj
 
 It is the SQLite counterpart of [pgjinja](https://github.com/thejens/pgjinja) for PostgreSQL. The two share the same function names and template behaviour.
 
+Want to build dbt-style models from your stored templates? [dbinja](https://github.com/thejens/dbinja) runs `ref`/`source`/`config` SQL models from the `jinja_templates` table, inside the database.
+
 ```sql
 .load ./libsqlite_jinja
 
