@@ -1,0 +1,43 @@
+[package]
+name = "sqlite-jinja"
+version = "0.1.0"
+edition = "2024"
+description = "Jinja2 templates in SQLite: a loadable extension that renders templates from SQL with row data, bound parameters and stored templates, powered by MiniJinja."
+license = "MIT"
+repository = "https://github.com/thejens/sqlite-jinja"
+readme = "README.md"
+keywords = ["sqlite", "jinja2", "template", "sqlite-extension", "minijinja"]
+categories = ["database", "template-engine"]
+
+[lib]
+# cdylib: the loadable extension. rlib: for Rust programs that register the
+# functions on their own rusqlite connection (see the `static` feature).
+crate-type = ["cdylib", "rlib"]
+name = "sqlite_jinja"
+
+[features]
+default = ["loadable"]
+# Build a run-time loadable extension (`.load`, `load_extension()`).
+loadable = ["rusqlite/loadable_extension"]
+# Link SQLite statically instead; used by the test suite and by Rust programs
+# that call `sqlite_jinja::register` directly.
+static = ["rusqlite/bundled"]
+
+[dependencies]
+lru = "0.19.0"
+minijinja = { version = "3.0.5", features = ["json", "fuel", "loop_controls", "urlencode", "unicode", "preserve_order", "serde"] }
+minijinja-contrib = { version = "3.0.5", features = ["datetime", "pycompat"] }
+rusqlite = { version = "0.41.1", default-features = false, features = ["functions"] }
+serde_json = "1.0.154"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+# rustc strips release debuginfo by default; on macOS 27 / ld-27037 the
+# stripped dylib is rejected by dyld ("mis-aligned LINKEDIT string pool").
+strip = false
+
+[[test]]
+name = "functions"
+required-features = ["static"]
